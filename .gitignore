@@ -2,3 +2,4 @@
 .idea
 *.iml
 *.exe
+/v3_test/*.key
