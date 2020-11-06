@@ -15,7 +15,7 @@ type Config struct {
 	SerialNo   string          // 微信商户证书序列号
 	PrivateKey *rsa.PrivateKey // 微信支付商户私钥
 
-	//私有属性：微信平台证书序号与公钥，使用接口自动更新,微信要求12小时内更新一次
+	//私有属性：微信平台证书序号与公钥，使用接口自动更新
 	wxSerialNo  string
 	wxPublicKey *rsa.PublicKey
 }

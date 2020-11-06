@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var (
+/*var (
 	_emap = map[int]error{
 		204: errors.New("204微信处理成功，无返回Body"),
 		400: errors.New("400微信协议或者参数非法"),
@@ -27,7 +27,7 @@ var (
 		502: errors.New("502微信服务下线，暂时不可用"),
 		503: errors.New("503微信服务不可用，过载保护"),
 	}
-)
+)*/
 
 // Call 调用接口方法
 func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err error) {
@@ -36,11 +36,11 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 		resBody string
 	)
 	defer func() {
-		log.Println("微信请求接口：s%", cfg.ServiceUrl+path)
-		log.Println("微信请求报文：s%", reqBody)
-		log.Println("微信响应报文：s%", resBody)
+		log.Println("微信请求接口：", cfg.ServiceUrl+path)
+		log.Println("微信请求报文：", reqBody)
+		log.Println("微信响应报文：", resBody)
 		if err != nil {
-			log.Println("微信响应错误：s%", err.Error())
+			log.Println("微信响应错误：", err.Error())
 		}
 	}()
 
@@ -59,17 +59,25 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 	if err != nil {
 		return
 	}
-	requestId := resp.Header.Get("Request-ID")
-	signature := resp.Header.Get("Wechatpay-Signature")
-	serial := resp.Header.Get("Wechatpay-Serial")
-	timestamp := resp.Header.Get("Wechatpay-Timestamp")
-	nonce := resp.Header.Get("Wechatpay-Nonce")
 	resBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
 	resBody = string(resBytes)
-	log.Println("请求ID：" + requestId + "  响应报文：" + resBody)
+
+	// HTTP 返回非200，直接返回错误
+	if resp.StatusCode != 200 {
+		var eres *ErrResponse
+		json.Unmarshal(resBytes, &eres)
+		err = errors.New(eres.Code + ":" + eres.Message)
+		return
+	}
+
+	//requestId := resp.Header.Get("Request-ID")
+	signature := resp.Header.Get("Wechatpay-Signature")
+	serial := resp.Header.Get("Wechatpay-Serial")
+	timestamp := resp.Header.Get("Wechatpay-Timestamp")
+	nonce := resp.Header.Get("Wechatpay-Nonce")
 
 	pubKey, err := cfg.WxPublicKey(serial)
 	if err != nil {
@@ -89,6 +97,11 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 	return
 }
 
+type ErrResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
 // Request 发送接口请求
 func Request(cfg *Config, path, method, authorization, body string) (resp *http.Response, err error) {
 	request, err := http.NewRequest(method, cfg.ServiceUrl+path, strings.NewReader(body))
@@ -104,10 +117,13 @@ func Request(cfg *Config, path, method, authorization, body string) (resp *http.
 	if err != nil {
 		return
 	}
-	if resp.StatusCode != 200 {
+	/*if resp.StatusCode != 200 {
+		bytes,_:=ioutil.ReadAll(resp.Body)
+		log.Println(resp.Status,string(bytes))
+
 		err = _emap[resp.StatusCode]
 		return
-	}
+	}*/
 	return
 }
 

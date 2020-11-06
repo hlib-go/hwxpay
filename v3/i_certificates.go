@@ -63,7 +63,6 @@ func Certificates(cfg *Config) (cert *Cert, err error) {
 	}
 
 	cert = new(Cert)
-
 	for _, datum := range result.Data {
 		if time.Time(cert.EffectiveTime).Before(time.Time(datum.EffectiveTime)) {
 			ce := datum.EncryptCertificate
@@ -75,7 +74,6 @@ func Certificates(cfg *Config) (cert *Cert, err error) {
 				fmt.Println("Error AesGcmDecrypt：", err.Error())
 				return nil, err
 			}
-			fmt.Println(plaintext)
 			pub, err := CertificateParse(plaintext)
 			if err != nil {
 				fmt.Println("Error PublicKeyPemParse：", err.Error())
