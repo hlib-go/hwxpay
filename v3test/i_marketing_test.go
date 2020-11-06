@@ -14,7 +14,7 @@ import (
 // 发放代金券API测试
 func TestMarketingFavorUsersOpenidCoupons(t *testing.T) {
 	result, err := v3.MarketingFavorUsersOpenidCoupons(Config(), "oW-G-0hraaeGSfxrx_q9AfYRev60", &v3.MarketingFavorUsersOpenidCouponsParams{
-		StockId:      "15245469",
+		StockId:      "15269237",
 		OutRequestNo: strconv.Itoa(rand.Int()),
 	})
 	if err != nil {
