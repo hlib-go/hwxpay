@@ -31,19 +31,31 @@ var (
 
 // Call 调用接口方法
 func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err error) {
-	body := ""
+	var (
+		reqBody string
+		resBody string
+	)
+	defer func() {
+		log.Println("微信请求接口：s%", cfg.ServiceUrl+path)
+		log.Println("微信请求报文：s%", reqBody)
+		log.Println("微信响应报文：s%", resBody)
+		if err != nil {
+			log.Println("微信响应错误：s%", err.Error())
+		}
+	}()
+
 	if i != nil {
 		reqBytes, err := json.Marshal(i)
 		if err != nil {
 			return err
 		}
-		body = string(reqBytes)
+		reqBody = string(reqBytes)
 	}
-	authorization, err := Authorization(cfg, method, path, body)
+	authorization, err := Authorization(cfg, method, path, reqBody)
 	if err != nil {
 		return
 	}
-	resp, err := Request(cfg.ServiceUrl+path, method, authorization, body)
+	resp, err := Request(cfg, path, method, authorization, reqBody)
 	if err != nil {
 		return
 	}
@@ -56,10 +68,14 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 	if err != nil {
 		return
 	}
-	resBody := string(resBytes)
+	resBody = string(resBytes)
 	log.Println("请求ID：" + requestId + "  响应报文：" + resBody)
 
-	ok, err := V3SignVery(signature, timestamp, nonce, resBody, cfg.WxPublicKey(serial))
+	pubKey, err := cfg.WxPublicKey(serial)
+	if err != nil {
+		return
+	}
+	ok, err := V3SignVery(signature, timestamp, nonce, resBody, pubKey)
 	if err != nil {
 		return
 	}
@@ -74,8 +90,8 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 }
 
 // Request 发送接口请求
-func Request(url, method, authorization, body string) (resp *http.Response, err error) {
-	request, err := http.NewRequest(method, url, strings.NewReader(body))
+func Request(cfg *Config, path, method, authorization, body string) (resp *http.Response, err error) {
+	request, err := http.NewRequest(method, cfg.ServiceUrl+path, strings.NewReader(body))
 	if err != nil {
 		return
 	}
@@ -83,6 +99,7 @@ func Request(url, method, authorization, body string) (resp *http.Response, err 
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Accept", "application/json")
 	request.Header.Set("Authorization", authorization)
+	request.Header.Set("Wechatpay-Serial", cfg.wxSerialNo) // 存在敏感字段加密时必填，其它场景可选
 	resp, err = http.DefaultClient.Do(request)
 	if err != nil {
 		return
@@ -103,7 +120,8 @@ func Authorization(cfg *Config, method, path, body string) (authorization string
 	if err != nil {
 		return
 	}
-	authorization = fmt.Sprintf(`%s mchid="%s",nonce_str="%s",signature="%s",timestamp="%s",serial_no="%s"`, authType, cfg.Mchid, nonceStr, signature, timestamp, cfg.SerialNo)
+	authorization = fmt.Sprintf(`%s mchid="%s",nonce_str="%s",signature="%s",timestamp="%s",serial_no="%s"`,
+		authType, cfg.Mchid, nonceStr, signature, timestamp, cfg.SerialNo)
 	return
 }
 

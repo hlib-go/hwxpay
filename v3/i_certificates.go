@@ -1,6 +1,9 @@
 package v3
 
 import (
+	"crypto/rsa"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
@@ -23,32 +26,91 @@ import (
 首次下载证书，可以使用微信支付提供的证书下载工具
 */
 
-// Certificates 微信平台证书列表
+// Certificates 微信平台证书列表, 返回最新证书
 func Certificates(cfg *Config) (cert *Cert, err error) {
-	method := "GET"
-	path := "/v3/certificates"
-	body := ""
-	authorization, err := Authorization(cfg, method, path, body)
+	var (
+		method  = "GET"
+		path    = "/v3/certificates"
+		reqBody = ""
+		resBody string
+	)
+	defer func() {
+		log.Println("微信请求接口：", cfg.ServiceUrl+path)
+		log.Println("微信响应报文：", resBody)
+		if err != nil {
+			log.Println("微信响应错误：", err.Error())
+		}
+	}()
+
+	authorization, err := Authorization(cfg, method, path, reqBody)
 	if err != nil {
 		return
 	}
-	resp, err := Request(cfg.ServiceUrl+path, method, authorization, body)
+	resp, err := Request(cfg, path, method, authorization, reqBody)
 	if err != nil {
 		return
 	}
-	bytes, err := ioutil.ReadAll(resp.Body)
+	resBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
-	log.Println("获取证书列表:" + string(bytes))
-	// 最新证书缓存到全局变量
+	resBody = string(resBytes)
+
+	var result *CertificatesResult
+	err = json.Unmarshal(resBytes, &result)
+	if err != nil {
+		return
+	}
+
+	cert = new(Cert)
+
+	for _, datum := range result.Data {
+		if time.Time(cert.EffectiveTime).Before(time.Time(datum.EffectiveTime)) {
+			ce := datum.EncryptCertificate
+			ciphertext := ce.Ciphertext
+			nonce := ce.Nonce
+			associatedData := ce.AssociatedData
+			plaintext, err := AesGcmDecrypt(ciphertext, nonce, associatedData, cfg.V3Secret)
+			if err != nil {
+				fmt.Println("Error AesGcmDecrypt：", err.Error())
+				return nil, err
+			}
+			fmt.Println(plaintext)
+			pub, err := CertificateParse(plaintext)
+			if err != nil {
+				fmt.Println("Error PublicKeyPemParse：", err.Error())
+				return nil, err
+			}
+			cert.PublicKey = pub
+			cert.EffectiveTime = datum.EffectiveTime
+			cert.ExpireTime = datum.ExpireTime
+			cert.SerialNo = datum.SerialNo
+		}
+	}
 	return
 }
 
 type Cert struct {
-	PubKey        string
+	PublicKey     *rsa.PublicKey
 	SerialNo      string
-	Algorithm     string
-	EffectiveTime time.Time
-	ExpireTime    time.Time
+	EffectiveTime Time
+	ExpireTime    Time
+}
+
+type CertificatesResult struct {
+	Data []*CertificatesResultData `json:"data"`
+}
+
+type CertificatesResultData struct {
+	SerialNo           string                         `json:"serial_no"`
+	EffectiveTime      Time                           `json:"effective_time"`
+	ExpireTime         Time                           `json:"expire_time"`
+	EncryptCertificate *CertificatesResultDataEncrypt `json:"encrypt_certificate"`
+}
+
+type CertificatesResultDataEncrypt struct {
+	Algorithm      string `json:"algorithm"`
+	Nonce          string `json:"nonce"`
+	AssociatedData string `json:"associated_data"`
+	Ciphertext     string `json:"ciphertext"`
 }

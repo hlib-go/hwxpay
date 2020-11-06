@@ -18,44 +18,67 @@ import (
 
 // 微信APIv3 签名验签、回调数据解密、敏感数据加密解密
 
-// RsaSignWithSha256 商户私钥签名
-func RsaSignWithSha256(data, priKey string) (string, error) {
-	keyBytes := []byte(priKey)
+/*
+声明所使用的证书:
+某些情况下，将需要更新密钥对和证书。为了保证更换过程中不影响API的使用，请求和应答的HTTP头部中包括证书序列号，以声明签名或者加密所用的密钥对和证书。
+商户签名使用商户私钥，证书序列号包含在请求HTTP头部的Authorization的serial_no
+微信支付签名使用微信支付平台私钥，证书序列号包含在应答HTTP头部的Wechatpay-Serial
+商户上送敏感信息时使用微信支付平台公钥加密，证书序列号包含在请求HTTP头部的Wechatpay-Serial
+*/
+
+// PrivateKeyPemParse 私钥pem格式解析
+func PrivateKeyPemParse(priPem string) (pri *rsa.PrivateKey, err error) {
+	keyBytes := []byte(priPem)
+	block, _ := pem.Decode(keyBytes)
+	if block == nil {
+		err = errors.New("rsa private key error")
+		return
+	}
+	privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return
+	}
+	pri = privateKey.(*rsa.PrivateKey)
+	return
+}
+
+// CertificateParse 微信平台验签公钥pem格式解析
+func CertificateParse(pubPem string) (pub *rsa.PublicKey, err error) {
+	block, _ := pem.Decode([]byte(pubPem))
+	if block == nil {
+		err = errors.New("rsa private key error")
+		return
+	}
+	pk, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return
+	}
+
+	pub = pk.PublicKey.(*rsa.PublicKey)
+	return
+}
+
+// RsaSignWithSha256 私钥签名
+func RsaSignWithSha256(data string, priKey *rsa.PrivateKey) (string, error) {
 	dataBytes := []byte(data)
 	h := sha256.New()
 	h.Write(dataBytes)
 	hashed := h.Sum(nil)
-	block, _ := pem.Decode(keyBytes)
-	if block == nil {
-		return "", errors.New("rsa private key error")
-	}
-	privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		return "", err
-	}
-	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey.(*rsa.PrivateKey), crypto.SHA256, hashed)
+	signature, err := rsa.SignPKCS1v15(rand.Reader, priKey, crypto.SHA256, hashed)
 	if err != nil {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(signature), nil
 }
 
-// RsaVeryWithSha256 平台公钥验签
-func RsaVeryWithSha256(data, signature, pubKey string) (bool, error) {
-	block, _ := pem.Decode([]byte(pubKey))
-	if block == nil {
-		return false, errors.New("rsa private key error")
-	}
+// RsaVeryWithSha256 公钥验签
+func RsaVeryWithSha256(data, signature string, pubKey *rsa.PublicKey) (bool, error) {
 	oldSign, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
 		return false, err
 	}
-	pk, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return false, err
-	}
 	hashed := sha256.Sum256([]byte(data))
-	err = rsa.VerifyPKCS1v15(pk.(*rsa.PublicKey), crypto.SHA256, hashed[:], oldSign)
+	err = rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, hashed[:], oldSign)
 	if err != nil {
 		return false, err
 	}
@@ -63,7 +86,7 @@ func RsaVeryWithSha256(data, signature, pubKey string) (bool, error) {
 }
 
 // AesGcmDecrypt 证书和回调报文解密
-func AesGcmDecrypt(ciphertext string, nonce, additionalData []byte, v3Secret string) (plaintext string, err error) {
+func AesGcmDecrypt(ciphertext string, nonce, additionalData string, v3Secret string) (plaintext string, err error) {
 	key := []byte(v3Secret) //key是APIv3密钥，长度32位，由管理员在商户平台上自行设置的
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -77,12 +100,11 @@ func AesGcmDecrypt(ciphertext string, nonce, additionalData []byte, v3Secret str
 	if err != nil {
 		return
 	}
-	plainData, err := aesGcm.Open(nil, nonce, cipherData, additionalData)
+	plainData, err := aesGcm.Open(nil, []byte(nonce), cipherData, []byte(additionalData))
 	if err != nil {
 		return
 	}
 	plaintext = string(plainData)
-	fmt.Println("plaintext: ", plaintext)
 	return
 }
 
@@ -94,7 +116,6 @@ func RsaEncrypt(plaintext []byte, pub *rsa.PublicKey) (ciphertext string, err er
 		return
 	}
 	ciphertext = base64.StdEncoding.EncodeToString(cipherdata)
-	fmt.Printf("Ciphertext: %s\n", ciphertext)
 	return
 }
 
@@ -106,6 +127,5 @@ func RsaDecrypt(ciphertext string, priv *rsa.PrivateKey) (plaintext []byte, err 
 		fmt.Fprintf(os.Stderr, "Error from decryption: %s\n", err)
 		return
 	}
-	fmt.Printf("Plaintext: %s\n", string(plaintext))
 	return
 }
