@@ -13,7 +13,9 @@ import (
 
 // 发放代金券API测试
 func TestMarketingFavorUsersOpenidCoupons(t *testing.T) {
-	result, err := v3.MarketingFavorUsersOpenidCoupons(Config(), "oW-G-0hraaeGSfxrx_q9AfYRev60", &v3.MarketingFavorUsersOpenidCouponsParams{
+	// 朱虹波：oW-G-0nH7QgggeekmXrr8hweyFFs
+	// zengs "oW-G-0hraaeGSfxrx_q9AfYRev60"
+	result, err := v3.MarketingFavorUsersOpenidCoupons(Config(), "oW-G-0nH7QgggeekmXrr8hweyFFs", &v3.MarketingFavorUsersOpenidCouponsParams{
 		StockId:      "15269237",
 		OutRequestNo: strconv.Itoa(rand.Int()),
 	})
