@@ -2,4 +2,4 @@
 .idea
 *.iml
 *.exe
-/v3test/cert/*
+/v3/test/cert/*

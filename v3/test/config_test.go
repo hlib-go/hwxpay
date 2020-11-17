@@ -1,8 +1,8 @@
-package v3test
+package main
 
 import (
 	"encoding/json"
-	hwxpay "hwxpay/v3"
+	hwxpay "github.com/hlib-go/hwxpay/v3"
 	"io/ioutil"
 	"testing"
 )

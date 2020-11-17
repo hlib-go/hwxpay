@@ -1,7 +1,7 @@
-package v3test
+package main
 
 import (
-	v3 "hwxpay/v3"
+	v3 "github.com/hlib-go/hwxpay/v3"
 	"math/rand"
 	"strconv"
 	"testing"
