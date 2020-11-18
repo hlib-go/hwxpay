@@ -8,7 +8,7 @@ import (
 )
 
 func Config() *hwxpay.Config {
-	// cert 在当前目录/cert/放微信证书工具下载的私钥 ,用于测试
+	// cert 在当前目录/cert/放微信证书工具下载的私钥
 	wxpkBytes, err := ioutil.ReadFile("./cert/apiclient_key.pem")
 	if err != nil {
 		panic(err)
