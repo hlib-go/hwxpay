@@ -94,7 +94,7 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 	timestamp := resp.Header.Get("Wechatpay-Timestamp")
 	nonce := resp.Header.Get("Wechatpay-Nonce")
 
-	pubKey, err := GetWxPublicKey(cfg, serial)
+	pubKey, err := cfg.GetWxPubKey(serial)
 	if err != nil {
 		return
 	}
@@ -119,11 +119,6 @@ type ErrResponse struct {
 
 // Request 发送接口请求
 func Request(cfg *Config, path, method, authorization, body string) (resp *http.Response, err error) {
-	serial, err := GetWxSerialNo(cfg)
-	if err != nil {
-		return
-	}
-
 	request, err := http.NewRequest(method, cfg.ServiceUrl+path, strings.NewReader(body))
 	if err != nil {
 		return
@@ -132,7 +127,7 @@ func Request(cfg *Config, path, method, authorization, body string) (resp *http.
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Accept", "application/json")
 	request.Header.Set("Authorization", authorization)
-	request.Header.Set("Wechatpay-Serial", serial) // 存在敏感字段加密时必填，其它场景可选
+	request.Header.Set("Wechatpay-Serial", cfg.wxSerialNo) // 存在敏感字段加密时必填，其它场景可选
 	resp, err = http.DefaultClient.Do(request)
 	if err != nil {
 		return
@@ -145,7 +140,11 @@ func Authorization(cfg *Config, method, path, body string) (authorization string
 	authType := "WECHATPAY2-SHA256-RSA2048" //固定字符串
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	nonceStr := RandomString(32)
-	signature, err := V3Sign(method, path, body, timestamp, nonceStr, cfg.MchPrivateKey)
+	priKey, err := cfg.GetMchPriKey()
+	if err != nil {
+		return
+	}
+	signature, err := V3Sign(method, path, body, timestamp, nonceStr, priKey)
 	if err != nil {
 		return
 	}

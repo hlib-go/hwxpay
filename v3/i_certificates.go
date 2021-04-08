@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"sync"
 	"time"
 )
 
@@ -26,47 +25,6 @@ import (
 接口的频率限制: 单个商户号1000 次/s
 首次下载证书，可以使用微信支付提供的证书下载工具
 */
-
-var (
-	WX_SERIAL_NO = "wxSerialNo"
-	wpk          sync.Map
-)
-
-// 获取微信平台公钥序号
-func GetWxSerialNo(cfg *Config) (serialNo string, err error) {
-	v, ok := wpk.Load(WX_SERIAL_NO)
-	if ok {
-		serialNo = v.(string)
-		return
-	}
-	_, err = GetWxPublicKey(cfg, "")
-	if err != nil {
-		return
-	}
-	v, ok = wpk.Load(WX_SERIAL_NO)
-	if ok {
-		serialNo = v.(string)
-		return
-	}
-	return
-}
-
-// 获取微信平台公钥
-func GetWxPublicKey(cfg *Config, wxSerial string) (pub *rsa.PublicKey, err error) {
-	v, ok := wpk.Load(wxSerial)
-	if ok {
-		pub = v.(*rsa.PublicKey)
-		return
-	}
-	cert, err := Certificates(cfg)
-	if err != nil {
-		return
-	}
-	wpk.Store(WX_SERIAL_NO, cert.SerialNo)
-	wpk.Store(cert.SerialNo, cert.PublicKey)
-	pub = cert.PublicKey
-	return
-}
 
 // Certificates 微信平台证书列表, 返回最新证书
 func Certificates(cfg *Config) (cert *Cert, err error) {

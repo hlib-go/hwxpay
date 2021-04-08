@@ -12,7 +12,7 @@ func NotifyVerifySign(cfg *Config, h *http.Header, body string) (err error) {
 	timestamp := h.Get("Wechatpay-Timestamp")
 	nonce := h.Get("Wechatpay-Nonce")
 
-	pubKey, err := GetWxPublicKey(cfg, serial)
+	pubKey, err := cfg.GetWxPubKey(serial)
 	if err != nil {
 		return
 	}
