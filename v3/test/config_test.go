@@ -19,7 +19,8 @@ func Config() *hwxpay.Config {
 		"wx239c521c61221a8a", // 公众号的appid，需要与mchid有绑定关系
 		"1579444051",
 		"himktfsdfwerwergrthydrrtwerwefd2",
-		"3AF43C0A75C61C12CE6423400BB4978D7B41FC0A", string(wxpkBytes))
+		"3AF43C0A75C61C12CE6423400BB4978D7B41FC0A",
+		string(wxpkBytes))
 	if err != nil {
 		panic(err)
 	}

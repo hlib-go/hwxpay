@@ -22,7 +22,7 @@ func MarketingFavorUsersOpenidCoupons(cfg *Config, openid string, params *Market
 		params.Appid = cfg.Appid
 	}
 	params.OutRequestNo = params.StockCreatorMchid + time.Now().Format("20060102") + params.OutRequestNo
-	err = Call(cfg, "/v3/marketing/favor/users/"+openid+"/coupons", "POST", params, &result)
+	err = POST(cfg, "/v3/marketing/favor/users/"+openid+"/coupons", params, &result)
 	return
 }
 

@@ -15,7 +15,7 @@ import (
 func TestMarketingFavorUsersOpenidCoupons(t *testing.T) {
 	// 朱虹波：oW-G-0nH7QgggeekmXrr8hweyFFs
 	// zengs "oW-G-0hraaeGSfxrx_q9AfYRev60"
-	result, err := v3.MarketingFavorUsersOpenidCoupons(Config(), "oW-G-0nH7QgggeekmXrr8hweyFFs", &v3.MarketingFavorUsersOpenidCouponsParams{
+	result, err := v3.MarketingFavorUsersOpenidCoupons(Config(), "oW-G-0hraaeGSfxrx_q9AfYRev60", &v3.MarketingFavorUsersOpenidCouponsParams{
 		StockId:      "15269237",
 		OutRequestNo: strconv.Itoa(rand.Int()),
 	})

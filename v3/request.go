@@ -29,6 +29,16 @@ import (
 	}
 )*/
 
+func GET(cfg *Config, path string, i interface{}, o interface{}) (err error) {
+	err = Call(cfg, path, "GET", i, o)
+	return
+}
+
+func POST(cfg *Config, path string, i interface{}, o interface{}) (err error) {
+	err = Call(cfg, path, "POST", i, o)
+	return
+}
+
 // Call 调用接口方法
 func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err error) {
 	var (
@@ -65,6 +75,11 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 	}
 	resBody = string(resBytes)
 
+	// HTTP 返回204，处理成功，应答无内容
+	if resp.StatusCode == 204 {
+		return
+	}
+
 	// HTTP 返回非200，直接返回错误
 	if resp.StatusCode != 200 {
 		var eres *ErrResponse
@@ -79,7 +94,7 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 	timestamp := resp.Header.Get("Wechatpay-Timestamp")
 	nonce := resp.Header.Get("Wechatpay-Nonce")
 
-	pubKey, err := cfg.WxPublicKey(serial)
+	pubKey, err := GetWxPublicKey(cfg, serial)
 	if err != nil {
 		return
 	}
@@ -104,6 +119,11 @@ type ErrResponse struct {
 
 // Request 发送接口请求
 func Request(cfg *Config, path, method, authorization, body string) (resp *http.Response, err error) {
+	serial, err := GetWxSerialNo(cfg)
+	if err != nil {
+		return
+	}
+
 	request, err := http.NewRequest(method, cfg.ServiceUrl+path, strings.NewReader(body))
 	if err != nil {
 		return
@@ -112,18 +132,11 @@ func Request(cfg *Config, path, method, authorization, body string) (resp *http.
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Accept", "application/json")
 	request.Header.Set("Authorization", authorization)
-	request.Header.Set("Wechatpay-Serial", cfg.wxSerialNo) // 存在敏感字段加密时必填，其它场景可选
+	request.Header.Set("Wechatpay-Serial", serial) // 存在敏感字段加密时必填，其它场景可选
 	resp, err = http.DefaultClient.Do(request)
 	if err != nil {
 		return
 	}
-	/*if resp.StatusCode != 200 {
-		bytes,_:=ioutil.ReadAll(resp.Body)
-		log.Println(resp.Status,string(bytes))
-
-		err = _emap[resp.StatusCode]
-		return
-	}*/
 	return
 }
 
@@ -132,7 +145,7 @@ func Authorization(cfg *Config, method, path, body string) (authorization string
 	authType := "WECHATPAY2-SHA256-RSA2048" //固定字符串
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	nonceStr := RandomString(32)
-	signature, err := V3Sign(method, path, body, timestamp, nonceStr, cfg.PrivateKey)
+	signature, err := V3Sign(method, path, body, timestamp, nonceStr, cfg.MchPrivateKey)
 	if err != nil {
 		return
 	}
