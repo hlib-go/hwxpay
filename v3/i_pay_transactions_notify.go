@@ -13,7 +13,7 @@ package v3
 */
 
 // 支付通知
-func PayNotify(conf *Config, data string) (p *PayNotifyParams, err error) {
+func NotifyPay(conf *Config, data string) (p *PayNotifyParams, err error) {
 	err = NotifyDecrypt(conf, data, &p)
 	return
 }
