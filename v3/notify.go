@@ -11,13 +11,15 @@ import (
 func NotifyResponse(w http.ResponseWriter, err error) {
 	if err != nil {
 		w.Write([]byte(fmt.Sprintf(`{"code": "FAIL","message": "%s"}`, err.Error())))
+		w.WriteHeader(500)
 		return
 	}
 	w.Write([]byte(`{"code": "SUCCESS","message": "成功"}`))
+	w.WriteHeader(200)
 }
 
 // 微信支付与退款通知验签
-func NotifyVerifySign(cfg *Config, h *http.Header, body string) (err error) {
+func NotifyVerifySign(cfg *Config, h http.Header, body string) (err error) {
 	signature := h.Get("Wechatpay-Signature")
 	serial := h.Get("Wechatpay-Serial")
 	timestamp := h.Get("Wechatpay-Timestamp")
