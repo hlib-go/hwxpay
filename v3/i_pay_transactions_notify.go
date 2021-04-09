@@ -13,6 +13,33 @@ package v3
 */
 
 // 支付通知
-func PayNotify() {
+func PayNotify(conf *Config, data string) (p *PayNotifyParams, err error) {
+	err = NotifyDecrypt(conf, data, &p)
+	return
+}
 
+type PayNotifyParams struct {
+	Appid          string                 `json:"appid"`
+	Mchid          string                 `json:"mchid"`
+	OutTradeNo     string                 `json:"out_trade_no"`
+	TransactionId  string                 `json:"transaction_id"`
+	TradeType      string                 `json:"trade_type"`
+	TradeState     TradeState             `json:"trade_state"`
+	TradeStateDesc string                 `json:"trade_state_desc"`
+	BankType       string                 `json:"bank_type"`
+	Attach         string                 `json:"attach"`
+	SuccessTime    string                 `json:"success_time"`
+	Payer          *PayNotifyParamsPayer  `json:"payer"`
+	Amount         *PayNotifyParamsAmount `json:"amount"`
+}
+
+type PayNotifyParamsPayer struct {
+	Openid string `json:"openid"` //用户在直连商户appid下的唯一标识。
+}
+
+type PayNotifyParamsAmount struct {
+	Total         int64  `json:"total"`                   //订单总金额，单位为分。
+	PayerTotal    int64  `json:"payer_total"`             //用户支付金额，单位为分。
+	Currency      string `json:"currency,omitempt"`       //非必填。 CNY：人民币，境内商户号仅支持人民币。
+	PayerCurrency string `json:"payer_currency,omitempt"` //用户支付币种
 }

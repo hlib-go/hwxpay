@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
-	"log"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -42,15 +42,18 @@ func POST(cfg *Config, path string, i interface{}, o interface{}) (err error) {
 // Call 调用接口方法
 func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err error) {
 	var (
-		reqBody string
-		resBody string
+		clog       = logrus.WithField("requestId", RandomString(32))
+		nanosecond = time.Now().Nanosecond()
+		reqBody    string
+		resBody    string
 	)
 	defer func() {
-		log.Println("微信请求接口：", cfg.ServiceUrl+path)
-		log.Println("微信请求报文：", reqBody)
-		log.Println("微信响应报文：", resBody)
+		ms := strconv.Itoa((time.Now().Nanosecond() - nanosecond) / 1e6)
+		clog.Info("微信请求接口：", cfg.ServiceUrl+path)
+		clog.Info("微信请求报文：", reqBody)
+		clog.WithField("ms", ms).Info("微信响应报文：", resBody)
 		if err != nil {
-			log.Println("微信响应错误：", err.Error())
+			clog.WithField("ms", ms).Warn("微信响应错误：", err.Error())
 		}
 	}()
 
