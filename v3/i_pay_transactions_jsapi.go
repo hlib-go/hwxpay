@@ -10,9 +10,8 @@ import (
 func JsapiPrepay(cfg *Config, params *JsapiParams) (p *PrepayParams, err error) {
 	if params.Appid == "" {
 		params.Appid = cfg.Appid
-	}
-	if params.Mchid == "" {
-		params.Mchid = cfg.Mchid
+	} else {
+		cfg.Appid = params.Appid
 	}
 
 	r, err := TransactionsJsapi(cfg, params)
