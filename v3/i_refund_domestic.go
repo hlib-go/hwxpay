@@ -18,8 +18,8 @@ type RefundParams struct {
 }
 
 type RefundParamsAmount struct {
-	Refund   string `json:"refund"`
-	Total    string `json:"total"`
+	Refund   int64  `json:"refund"`
+	Total    int64  `json:"total"`
 	Currency string `json:"currency"`
 }
 
