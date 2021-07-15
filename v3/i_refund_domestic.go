@@ -10,17 +10,17 @@ type RefundParams struct {
 	TransactionId string               `json:"transaction_id"`
 	OutTradeNo    string               `json:"out_trade_no"`
 	OutRefundNo   string               `json:"out_refund_no"`
-	Reason        string               `json:"reason"`
-	NotifyUrl     string               `json:"notify_url"`
-	FundsAccount  string               `json:"funds_account"`
+	Reason        string               `json:"reason,omitempty"`
+	NotifyUrl     string               `json:"notify_url,omitempty"`
+	FundsAccount  string               `json:"funds_account,omitempty"`
 	Amount        *RefundParamsAmount  `json:"amount"`
-	GoodsDetail   []*RefundParamsGoods `json:"goods_detail"`
+	GoodsDetail   []*RefundParamsGoods `json:"goods_detail,omitempty"`
 }
 
 type RefundParamsAmount struct {
 	Refund   int64  `json:"refund"`
 	Total    int64  `json:"total"`
-	Currency string `json:"currency"`
+	Currency string `json:"currency,omitempty"`
 }
 
 type RefundParamsGoods struct {
@@ -64,7 +64,7 @@ type RefundResultDetail struct {
 	Type         string                     `json:"type"`
 	Amount       int64                      `json:"amount"`
 	RefundAmount int64                      `json:"refund_amount"`
-	GoodsDetail  []*RefundResultDetailGoods `json:"goods_detail"`
+	GoodsDetail  []*RefundResultDetailGoods `json:"goods_detail,omitempty"`
 }
 
 type RefundResultDetailGoods struct {
