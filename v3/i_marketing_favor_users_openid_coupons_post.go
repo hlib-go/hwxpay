@@ -8,7 +8,7 @@ import (
 //文档 https://pay.weixin.qq.com/wiki/doc/apiv3/wxpay/marketing/convention/chapter3_2.shtml
 
 // MarketingFavorUsersOpenidCoupons 发放代金券API
-func MarketingFavorUsersOpenidCoupons(cfg *Config, openid string, params *MarketingFavorUsersOpenidCouponsParams) (result *MarketingFavorUsersOpenidCouponsResult, err error) {
+func MarketingFavorUsersOpenidCouponsPost(cfg *Config, openid string, params *MarketingFavorUsersOpenidCouponsParams) (result *MarketingFavorUsersOpenidCouponsResult, err error) {
 	if params.StockId == "" || openid == "" {
 		err = errors.New("参数stock_id与openid不能为空")
 		return

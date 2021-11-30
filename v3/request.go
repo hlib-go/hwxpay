@@ -43,12 +43,12 @@ func POST(cfg *Config, path string, i interface{}, o interface{}) (err error) {
 func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err error) {
 	var (
 		clog       = logrus.WithField("requestId", RandomString(32))
-		nanosecond = time.Now().Nanosecond()
+		nanosecond = time.Now().UnixNano()
 		reqBody    string
 		resBody    string
 	)
 	defer func() {
-		ms := strconv.Itoa((time.Now().Nanosecond() - nanosecond) / 1e6)
+		ms := strconv.Itoa(int((time.Now().UnixNano() - nanosecond) / 1e6))
 		clog.Info("微信请求接口：", cfg.ServiceUrl+path)
 		clog.Info("微信请求报文：", reqBody)
 		clog.WithField("ms", ms).Info("微信响应报文：", resBody)
@@ -58,7 +58,8 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 	}()
 
 	if i != nil {
-		reqBytes, err := json.Marshal(i)
+		var reqBytes []byte
+		reqBytes, err = json.Marshal(i)
 		if err != nil {
 			return err
 		}
