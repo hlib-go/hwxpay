@@ -78,13 +78,7 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 		return
 	}
 	for index, ch := range resBytes {
-		switch {
-		case ch > '~':
-			resBytes[index] = ' '
-		case ch == '\r':
-		case ch == '\n':
-		case ch == '\t':
-		case ch < ' ':
+		if ch == '\r' || ch == '\n' || ch == '\t' {
 			resBytes[index] = ' '
 		}
 	}
