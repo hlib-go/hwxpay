@@ -77,10 +77,18 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 	if err != nil {
 		return
 	}
+	for index, ch := range resBytes {
+		switch {
+		case ch > '~':
+			resBytes[index] = ' '
+		case ch == '\r':
+		case ch == '\n':
+		case ch == '\t':
+		case ch < ' ':
+			resBytes[index] = ' '
+		}
+	}
 	resBody = string(resBytes)
-	resBody = strings.ReplaceAll(resBody, "\n", "")
-	resBody = strings.ReplaceAll(resBody, "\r", "")
-	resBody = strings.ReplaceAll(resBody, "\t", "")
 
 	// HTTP 返回204，处理成功，应答无内容
 	if resp.StatusCode == 204 {
