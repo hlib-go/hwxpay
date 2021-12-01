@@ -90,7 +90,10 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 	// HTTP 返回非200，直接返回错误
 	if resp.StatusCode != 200 {
 		var eres *ErrResponse
-		json.Unmarshal(resBytes, &eres)
+		err = json.Unmarshal([]byte(resBody), &eres)
+		if err != nil {
+			return
+		}
 		err = errors.New(eres.Code + ":" + eres.Message)
 		return
 	}
@@ -105,14 +108,14 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 	if err != nil {
 		return
 	}
-	ok, err := V3SignVery(signature, timestamp, nonce, resBody, pubKey)
+	ok, err := V3SignVery(signature, timestamp, nonce, string(resBytes), pubKey)
 	if err != nil {
 		return
 	}
 	if !ok {
 		return errors.New("签名校验失败")
 	}
-	err = json.Unmarshal(resBytes, o)
+	err = json.Unmarshal([]byte(resBody), o)
 	if err != nil {
 		return
 	}
