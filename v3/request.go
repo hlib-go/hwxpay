@@ -78,6 +78,9 @@ func Call(cfg *Config, path, method string, i interface{}, o interface{}) (err e
 		return
 	}
 	resBody = string(resBytes)
+	resBody = strings.ReplaceAll(resBody, "\n", "")
+	resBody = strings.ReplaceAll(resBody, "\r", "")
+	resBody = strings.ReplaceAll(resBody, "\t", "")
 
 	// HTTP 返回204，处理成功，应答无内容
 	if resp.StatusCode == 204 {
